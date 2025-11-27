@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动报名助手 - 大王与小王</title>
+    <style>
+        :root {
+            --primary: #4f46e5; /* 靛蓝 */
+            --primary-hover: #4338ca;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+
+        /* 顶部导航栏 (毛玻璃效果) */
+        header {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 角色切换器 */
+        .role-switcher {
+            display: flex;
+            background: #e5e7eb;
+            padding: 4px;
+            border-radius: 20px;
+        }
+
+        .role-btn {
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-sub);
+            transition: all 0.3s;
+        }
+
+        .role-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* 发布表单区域 */
+        .admin-panel {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            display: none; /* 默认隐藏，JS控制显示 */
+            border: 1px solid #e5e7eb;
+        }
+
+        .admin-panel.show {
+            display: block;
+            animation: slideDown 0.4s ease;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* 活动列表 */
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-img {
+            width: 150px;
+            height: auto;
+            object-fit: cover;
+            background-color: #e5e7eb;
+        }
+
+        .card-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+        }
+
+        .card-date {
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: inline-block;
+            background: #e0e7ff;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .card-desc {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .btn-join {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-join:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-join.joined {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+            cursor: default;
+        }
+
+        .btn-delete {
+            color: var(--danger);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 8px;
+        }
+
+        .btn-delete:hover {
+            text-decoration: underline;
+        }
+
+        /* 标签 */
+        .role-badge {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #333;
+            color: white;
+            vertical-align: middle;
+        }
+
+        /* 动画 */
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .event-card {
+                flex-direction: column;
+            }
+            .card-img {
+                width: 100%;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">EventHub</div>
+        <div class="role-switcher">
+            <button class="role-btn active" id="btn-admin" onclick="switchRole('admin')">我是大王 (管理)</button>
+            <button class="role-btn" id="btn-user" onclick="switchRole('user')">我是小王 (报名)</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="admin-panel" id="admin-panel">
+            <h2 class="section-title">📅 发布新活动</h2>
+            <div class="form-group">
+                <label>活动名称</label>
+                <input type="text" id="input-title" placeholder="例如：周末剧本杀局">
+            </div>
+            <div class="form-group">
+                <label>活动时间</label>
+                <input type="text" id="input-date" placeholder="例如：本周六 14:00">
+            </div>
+            <div class="form-group">
+                <label>活动详情</label>
+                <textarea id="input-desc" rows="3" placeholder="介绍一下活动内容..."></textarea>
+            </div>
+            <button class="btn-primary" onclick="addEvent()">✨ 立即发布</button>
+        </div>
+
+        <h2 class="section-title">
+            <span id="list-title">活动列表</span>
+            <span class="role-badge" id="current-role-badge">管理员视图</span>
+        </h2>
+        <div class="card-grid" id="event-list">
+            </div>
+    </div>
+
+    <script>
+        // --- 模拟数据库 ---
+        // 我们使用 LocalStorage，这样刷新页面数据还在
+        let currentRole = 'admin'; // 'admin' or 'user'
+        
+        // 默认数据
+        const defaultEvents = [
+            {
+                id: 1,
+                title: "Python 编程分享会",
+                date: "2023-11-20 19:30",
+                desc: "关于如何用 Python 写小游戏的实战教学，欢迎小白参加！",
+                img: "https://source.unsplash.com/random/300x200/?code",
+                joined: false
+            },
+            {
+                id: 2,
+                title: "周末羽毛球友谊赛",
+                date: "2023-11-25 10:00",
+                desc: "体育馆 3 号场地，自带球拍，AA 制，目前缺 2 人。",
+                img: "https://source.unsplash.com/random/300x200/?sport",
+                joined: true
+            }
+        ];
+
+        // 初始化数据
+        let events = JSON.parse(localStorage.getItem('events')) || defaultEvents;
+
+        // --- 核心逻辑 ---
+
+        function saveEvents() {
+            localStorage.setItem('events', JSON.stringify(events));
+            renderEvents();
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            
+            // 更新按钮样式
+            document.getElementById('btn-admin').className = role === 'admin' ? 'role-btn active' : 'role-btn';
+            document.getElementById('btn-user').className = role === 'user' ? 'role-btn active' : 'role-btn';
+            
+            // 更新界面显示
+            const adminPanel = document.getElementById('admin-panel');
+            const badge = document.getElementById('current-role-badge');
+            
+            if (role === 'admin') {
+                adminPanel.classList.add('show');
+                badge.innerText = "管理员视图";
+                badge.style.background = "#333";
+            } else {
+                adminPanel.classList.remove('show');
+                badge.innerText = "用户视图";
+                badge.style.background = "#10b981";
+            }
+            
+            renderEvents();
+        }
+
+        function addEvent() {
+            const title = document.getElementById('input-title').value;
+            const date = document.getElementById('input-date').value;
+            const desc = document.getElementById('input-desc').value;
+
+            if (!title || !date) {
+                alert("请填写完整的活动信息！");
+                return;
+            }
+
+            const newEvent = {
+                id: Date.now(), // 简单的唯一ID
+                title: title,
+                date: date,
+                desc: desc,
+                img: `https://source.unsplash.com/random/300x200/?${Math.floor(Math.random()*100)}`, // 随机图
+                joined: false
+            };
+
+            events.unshift(newEvent); // 加到最前面
+            saveEvents();
+            
+            // 清空输入框
+            document.getElementById('input-title').value = "";
+            document.getElementById('input-date').value = "";
+            document.getElementById('input-desc').value = "";
+            
+            alert("发布成功！");
+        }
+
+        function deleteEvent(id) {
+            if(confirm("确定要删除这个活动吗？")) {
+                events = events.filter(e => e.id !== id);
+                saveEvents();
+            }
+        }
+
+        function toggleJoin(id) {
+            const event = events.find(e => e.id === id);
+            if (event) {
+                event.joined = !event.joined;
+                saveEvents();
+                if(event.joined) {
+                    alert("报名成功！请准时参加。");
+                } else {
+                    alert("已取消报名。");
+                }
+            }
+        }
+
+        function renderEvents() {
+            const list = document.getElementById('event-list');
+            list.innerHTML = "";
+
+            if (events.length === 0) {
+                list.innerHTML = "<p style='text-align:center; color:#888;'>暂无活动，大王快去发布吧！</p>";
+                return;
+            }
+
+            events.forEach(event => {
+                const card = document.createElement('div');
+                card.className = 'event-card';
+
+                // 根据角色决定操作按钮
+                let actionBtn = '';
+                if (currentRole === 'admin') {
+                    actionBtn = `<button class="btn-delete" onclick="deleteEvent(${event.id})">🗑 删除活动</button>`;
+                } else {
+                    if (event.joined) {
+                        actionBtn = `<button class="btn-join joined" onclick="toggleJoin(${event.id})">✓ 已报名</button>`;
+                    } else {
+                        actionBtn = `<button class="btn-join" onclick="toggleJoin(${event.id})">🙋‍♂️ 立即报名</button>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <img src="${event.img}" class="card-img" alt="event">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-date">${event.date}</span>
+                            <h3>${event.title}</h3>
+                        </div>
+                        <p class="card-desc">${event.desc}</p>
+                        <div class="card-actions">
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // 初始化
+        switchRole('admin'); // 默认大王视角
+    </script>
+</body>
+</html>
